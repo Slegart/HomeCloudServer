@@ -1,13 +1,31 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Session, ValidationPipe, UseGuards, Req,HttpCode,Get,HttpStatus,Request, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ValidationPipe } from '@nestjs/common';
 import { AuthDTO } from './auth.model';
+import { AuthGuard } from 'src/authguard/auth.guard';
+
 @Controller('auth')
 export class AuthController {
+  constructor(private authService: AuthService) {}
 
-    constructor(private readonly authService: AuthService) {}
-    @Get('login')
-    Login(@Query(ValidationPipe) authDTO: AuthDTO): boolean {
-        return this.authService.Login(authDTO);
-    }
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  signIn(@Body() AuthDTO: AuthDTO, @Session() session: any ){
+    return this.authService.login(AuthDTO);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
+  }
+  @Get('Connection')
+  CheckConnection(){
+    return 'Connected';
+  }
+
+  @Post('verify')
+  async verifyToken(@Headers('authorization') authorization: string): Promise<string>{
+    const token = authorization.replace('Bearer ', '');
+    return this.authService.verifyToken(token);
+  }
 }
