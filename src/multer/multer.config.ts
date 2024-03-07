@@ -1,8 +1,32 @@
 import { diskStorage } from 'multer';
-
+var fs = require('fs');
 export const multerConfig = {
-    storage: diskStorage({
-      destination: './uploads', 
+
+  storage: diskStorage({
+    destination: (req, file, callback) => {
+      const mimetype = file.mimetype.split('/')[1];
+
+      if (!fs.existsSync('uploads')) {
+        fs.mkdirSync('uploads', { recursive: true });
+      }
+      if (!fs.existsSync('uploads/images')) {
+        fs.mkdirSync('uploads/images', { recursive: true });
+      }
+      if (!fs.existsSync('uploads/videos')) {
+        fs.mkdirSync('uploads/videos', { recursive: true });
+      }
+      if (!fs.existsSync('uploads/other')) {
+        fs.mkdirSync('uploads/other', { recursive: true });
+      }
+
+      if (mimetype === 'jpeg' || mimetype === 'png' || mimetype === 'jpg') {
+        callback(null, 'uploads/images');
+      } else if (mimetype === 'mp4' || mimetype === 'mov') {
+        callback(null, 'uploads/videos');
+      } else {
+        callback(null, 'uploads/other');
+      }
+    },
       filename: (req, file, callback) => {
         const currentDate = new Date();
         const day = currentDate.getDate().toString().padStart(2, '0');
@@ -19,4 +43,4 @@ export const multerConfig = {
         callback(null, fullFilename); 
       },
     }),
-  };
+  }; 

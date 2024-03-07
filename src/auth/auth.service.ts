@@ -23,7 +23,7 @@ export class AuthService {
       const payload = { username };
       const access_token = this.jwtService.sign(payload, {
         secret: process.env.JWT_SECRET,
-        expiresIn: '10s', 
+        expiresIn: '100000s', 
       });
 
       return {
