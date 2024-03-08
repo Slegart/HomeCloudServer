@@ -1,8 +1,10 @@
-import { Controller, Get, Post,UseGuards,Query } from '@nestjs/common';
+import { Controller, Get, Post,UseGuards,Query, StreamableFile, Param, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { AuthGuard } from '../authguard/auth.guard';
+import path from 'path';
+
 
 @Controller('media')
 export class MediaController {
@@ -14,11 +16,13 @@ export class MediaController {
   uploadFile(@UploadedFile() file: Express.Multer.File): string {
     return this.mediaService.uploadFile(file);
   }
+
   @Get('getFiles')
   @UseGuards(AuthGuard)
-  ReturnFiles(@Query('type') Ftype: string, @Query('page') Page: number, @Query('limit') PageSize: number): string {
-    return this.mediaService.FetchFiles(Ftype, Page, PageSize);
+  async getImage(@Query('Ftype') Ftype: string, @Query('Page') Page: number,@Query('PageSize') PageSize:number , @Res() res: Response) {
+    return this.mediaService.getFiles(Ftype, Page, PageSize, res);
   }
+
   @Get('FilesLength')
   @UseGuards(AuthGuard)
   ReturnFilesLength(): string {

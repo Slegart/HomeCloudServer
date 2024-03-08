@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, StreamableFile } from '@nestjs/common';
+import { createReadStream } from 'fs';
 import * as path from 'path';
 
 @Injectable()
@@ -7,8 +8,9 @@ export class MediaService {
 
     constructor() {
         this.uploadBasePath = process.env.NODE_ENV === 'production'
-            ? path.join(__dirname, '/dist/uploads')
-            : path.join(__dirname, '/uploads'); 
+            ? path.join(process.cwd(), '/dist/uploads')
+            : path.join(process.cwd(), '/uploads'); 
+            
     }
 
     uploadFile(file: Express.Multer.File): string {
@@ -19,9 +21,31 @@ export class MediaService {
         return `File ${file} uploaded successfully.`;
     }
 
-    FetchFiles(Ftype: string, Page: number, PageSize: number): string {
-        return `Fetching files of type: ${Ftype} on page: ${Page} with page size: ${PageSize}`;
+    getFiles(Ftype: string, Page: number, PageSize: number, res: Response) {
+        console.log('Ftype:', Ftype);
+        if (!Ftype) {
+            console.log('No file type provided');
+        }
+        if (Ftype !== 'images' && Ftype !== 'videos' && Ftype !== 'other') {
+            console.log('Invalid file type');
+        }
+        const FilesPath = path.join(this.uploadBasePath, Ftype);
+        const fs = require('fs');
+        if (!fs.existsSync(FilesPath)) {
+            console.log('FilesPath does not exist');
+        } else {
+            const FilesLen = fs.readdirSync(FilesPath).length;
+            if (PageSize > FilesLen) {
+                const docname = fs.readdirSync(FilesPath)[0];
+                console.log('docname:', docname);
+                const filepath = path.join(FilesPath, docname);
+                console.log('filepath:', filepath);
+                const fileStream = fs.createReadStream(filepath);
+                fileStream.pipe(res);
+            }
+        }
     }
+
 
 
     FetchFilesLength(): string {
