@@ -48,7 +48,7 @@ export class MediaService {
 
 
 
-    FetchFilesLength(): string {
+    FetchFilesLength():  { Images: number; Videos: number; Other: number } {
         console.log('UploadBasePath:', this.uploadBasePath);
         const ImageFiles = path.join(this.uploadBasePath, 'images');
         const VideoFiles = path.join(this.uploadBasePath, 'videos');
@@ -69,6 +69,6 @@ export class MediaService {
             OtherFilesLength = fs.readdirSync(OtherFiles).length;
         }
 
-        return `Images: ${ImageFilesLength}, Videos: ${VideoFilesLength}, Other: ${OtherFilesLength}`;
+        return {Images: ImageFilesLength, Videos: VideoFilesLength, Other: OtherFilesLength};
     }
 }

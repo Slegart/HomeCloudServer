@@ -25,7 +25,7 @@ export class MediaController {
 
   @Get('FilesLength')
   @UseGuards(AuthGuard)
-  ReturnFilesLength(): string {
+  ReturnFilesLength(): { Images: number; Videos: number; Other: number }{
     return this.mediaService.FetchFilesLength();
   }
 }
