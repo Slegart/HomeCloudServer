@@ -1,5 +1,3 @@
-// auth.guard.ts
-
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -11,7 +9,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-
+    console.log('token:', token);
     if (!token) {
       throw new UnauthorizedException('Missing token');
     }

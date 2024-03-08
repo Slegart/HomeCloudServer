@@ -1,10 +1,12 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import * as path from 'path';
-
+import { Response } from 'express';
+import { FileIntegrity } from '@app/FileIntegrity';
 @Injectable()
 export class MediaService {
     private readonly uploadBasePath: string;
+    private readonly fileIntegrity = new FileIntegrity();
 
     constructor() {
         this.uploadBasePath = process.env.NODE_ENV === 'production'
@@ -13,7 +15,8 @@ export class MediaService {
             
     }
 
-    uploadFile(file: Express.Multer.File): string {
+    async uploadFile(file: Express.Multer.File): Promise<string> {
+        await this.fileIntegrity.CheckFileLocations();
         if (!file) {
             return 'No file provided';
         }
@@ -21,7 +24,8 @@ export class MediaService {
         return `File ${file} uploaded successfully.`;
     }
 
-    getFiles(Ftype: string, Page: number, PageSize: number, res: Response) {
+    async getFiles(Ftype: string, Page: number, PageSize: number, res: Response) {
+        await this.fileIntegrity.CheckFileLocations();
         console.log('Ftype:', Ftype);
         if (!Ftype) {
             console.log('No file type provided');
@@ -46,10 +50,7 @@ export class MediaService {
         }
     }
 
-
-
     FetchFilesLength():  { Images: number; Videos: number; Other: number } {
-        console.log('UploadBasePath:', this.uploadBasePath);
         const ImageFiles = path.join(this.uploadBasePath, 'images');
         const VideoFiles = path.join(this.uploadBasePath, 'videos');
         const OtherFiles = path.join(this.uploadBasePath, 'other');
@@ -71,4 +72,43 @@ export class MediaService {
 
         return {Images: ImageFilesLength, Videos: VideoFilesLength, Other: OtherFilesLength};
     }
+
+    async serveImage(fileName: string, res: Response)  {
+        await this.fileIntegrity.CheckFileLocations();
+        try {
+          console.log('Received fileName:', fileName);
+          const imagePath = path.join(this.uploadBasePath, '..', 'uploads', 'images', fileName);
+
+          const fs = require('fs');
+    
+          if (fs.existsSync(imagePath)) {
+    
+            const ext = path.extname(imagePath).slice(1);
+            const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+            res.header('Content-Type', contentType);
+            fs.createReadStream(imagePath).pipe(res);
+          } else {
+            res.status(404).send('Not Found');
+          }
+        } catch (error) {
+          console.error('Error serving image:', error);
+          res.status(500).send('Internal Server Error');
+        }
+    }
+    
+    async GetImagesnames(): Promise<string[]> {
+        await this.fileIntegrity.CheckFileLocations();
+        const ImageLinks = [];
+        console.log('GetImagesLinks');
+        const ImageFilesPath = path.join(this.uploadBasePath, 'images');
+        const fs = require('fs');
+    
+        if (fs.existsSync(ImageFilesPath)) {
+            const imageFiles = fs.readdirSync(ImageFilesPath);
+            console.log('ImageFiles2:', imageFiles);
+           return imageFiles;
+        }
+
+    }
+ 
 }

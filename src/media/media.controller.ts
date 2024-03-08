@@ -3,8 +3,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { AuthGuard } from '../authguard/auth.guard';
-import path from 'path';
-
+import * as path from 'path';
+import { Response } from 'express';
 
 @Controller('media')
 export class MediaController {
@@ -13,8 +13,8 @@ export class MediaController {
   @Post('upload')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file'))
-  uploadFile(@UploadedFile() file: Express.Multer.File): string {
-    return this.mediaService.uploadFile(file);
+  uploadFile(@UploadedFile() file: Express.Multer.File): Promise<string> {
+    return  this.mediaService.uploadFile(file);
   }
 
   @Get('getFiles')
@@ -28,4 +28,17 @@ export class MediaController {
   ReturnFilesLength(): { Images: number; Videos: number; Other: number }{
     return this.mediaService.FetchFilesLength();
   }
+
+  @Get('GetImageNames')
+  @UseGuards(AuthGuard)
+  async GetImageNames(): Promise<string[]>{
+    return this.mediaService.GetImagesnames();
+  }
+
+  @Get('ImageLinks')
+  @UseGuards(AuthGuard)
+  async serveImage(@Query('fileName') fileName: string, @Res() res: Response) {
+    return this.mediaService.serveImage(fileName, res);
+  }
+
 }
