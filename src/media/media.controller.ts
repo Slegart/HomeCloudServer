@@ -10,35 +10,35 @@ import { Response } from 'express';
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
+  //upload file
   @Post('upload')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(@UploadedFile() file: Express.Multer.File): Promise<string> {
     return  this.mediaService.uploadFile(file);
   }
+  //upload file
 
-  @Get('getFiles')
-  @UseGuards(AuthGuard)
-  async getImage(@Query('Ftype') Ftype: string, @Query('Page') Page: number,@Query('PageSize') PageSize:number , @Res() res: Response) {
-    return this.mediaService.getFiles(Ftype, Page, PageSize, res);
-  }
-
+  //files length
   @Get('FilesLength')
   @UseGuards(AuthGuard)
   ReturnFilesLength(): { Images: number; Videos: number; Other: number }{
     return this.mediaService.FetchFilesLength();
   }
+  //files length
 
-  @Get('GetImageNames')
+  //image gallery
+  @Get('GetFileNames')
   @UseGuards(AuthGuard)
-  async GetImageNames(): Promise<string[]>{
-    return this.mediaService.GetImagesnames();
+  async GetFileNames(@Query('fileType') fileType:string, @Query('PageNo')Pageno:number,@Query('PageSize')PageSize:number): Promise<string[]>{
+    return this.mediaService.GetFileNames(fileType,Pageno,PageSize);
   }
 
-  @Get('ImageLinks')
+  @Get('serveFile')
   @UseGuards(AuthGuard)
-  async serveImage(@Query('fileName') fileName: string, @Res() res: Response) {
-    return this.mediaService.serveImage(fileName, res);
+  async serveFile(@Query('fileName') fileName: string, @Query('fileType')fileType:string , @Res() res: Response) {
+    return this.mediaService.serveFile(fileName,fileType, res);
   }
+  //image gallery
 
 }

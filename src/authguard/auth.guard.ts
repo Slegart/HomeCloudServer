@@ -8,7 +8,26 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    //console.log('request:', request);
+    let token = this.extractTokenFromHeader(request);
+    //direct acess through href Bearer header
+    //potential security risk might change later
+    if(token === undefined){
+      try
+      {
+        const hrefLink = request._parsedOriginalUrl.href;
+        const keyword = '&Bearer' 
+        const index = hrefLink.indexOf(keyword);
+        if(index !== -1)
+        {
+          token = hrefLink.substring(index + keyword.length);
+        }
+      }
+      catch
+      {
+        throw new UnauthorizedException('Missing token');
+      }
+    }
     console.log('token:', token);
     if (!token) {
       throw new UnauthorizedException('Missing token');
