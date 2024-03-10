@@ -3,23 +3,25 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export class FileIntegrity {
-    private readonly uploadBasePath: string;
+    public static uploadBasePath: string;
 
     constructor() {
-        this.uploadBasePath = process.env.NODE_ENV === 'production'
+        FileIntegrity.uploadBasePath = process.env.NODE_ENV === 'production'
             ? path.join(process.cwd(), '/dist/uploads')
             : path.join(process.cwd(), '/uploads');
     }
 
     public async CheckFileLocations(): Promise<boolean> {
-        const UploadsFile = path.join(this.uploadBasePath);
+        try
+        {
+                 const UploadsFile = path.join(FileIntegrity.uploadBasePath);
         console.log('UploadsFile:', UploadsFile);
         if (!fs.existsSync(UploadsFile)) {
             fs.mkdirSync(UploadsFile);
         }
-        const ImageFiles = path.join(this.uploadBasePath, 'images');
-        const VideoFiles = path.join(this.uploadBasePath, 'videos');
-        const OtherFiles = path.join(this.uploadBasePath, 'other');
+        const ImageFiles = path.join(FileIntegrity.uploadBasePath, 'images');
+        const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
+        const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
 
         if (!fs.existsSync(ImageFiles)) {
             fs.mkdirSync(ImageFiles);
@@ -31,5 +33,11 @@ export class FileIntegrity {
             fs.mkdirSync(OtherFiles);
         }
         return true;
+        }
+        catch (error) {
+            console.error('Error checking file locations:', error);
+            return false;
+        }
+   
     }
 }

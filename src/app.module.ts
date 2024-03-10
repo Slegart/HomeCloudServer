@@ -7,14 +7,17 @@ import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './media/media.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule } from '@nestjs/config';
+import { SettingsController } from './settings/settings.controller';
+import { SettingsModule } from './settings/settings.module';
 @Module({
   imports: [AuthModule, MediaModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    SettingsModule,
 
   ],
-  controllers: [AppController, AuthController ],
+  controllers: [AppController, AuthController, SettingsController ],
   providers: [AppService, ],
 
 })
