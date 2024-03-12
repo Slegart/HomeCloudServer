@@ -41,4 +41,31 @@ export class MediaController {
   }
   //image gallery
 
+
+  //delete 1 file with name
+  @Get('deleteFile')
+  @UseGuards(AuthGuard)
+  async deleteFile(@Query('fileName') fileName: string,@Query('fileType')fileType:string): Promise<string> {
+    return this.mediaService.DeleteFile(fileName,fileType);
+  }
+  //delete 1 file with name
+
+
+  //delete all files of category
+  @Get('deleteAllFiles')
+  @UseGuards(AuthGuard)
+  async deleteAllFiles(@Query('fileType')fileType:string): Promise<string> {
+    return this.mediaService.DeleteAllFiles(fileType);
+  }
+  //delete all files of category
+  
+  
+  //GetAllFilesStats
+  @Get('GetAllFilesStats')
+  @UseGuards(AuthGuard)
+  async GetAllFilesStats(): Promise<string> {
+    return this.mediaService.GetAllFilesStats();
+  }
+  //GetAllFilesStats
+
 }

@@ -18,9 +18,8 @@ async function bootstrap() {
       },
     }),
   );
-  //app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
-  const port =3000;
+  const port =5000;
   await app.listen(port);
 }
 bootstrap();
