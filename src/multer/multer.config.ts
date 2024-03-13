@@ -1,5 +1,6 @@
 import { diskStorage } from 'multer';
 var fs = require('fs');
+
 export const multerConfig = {
 
   storage: diskStorage({
@@ -21,6 +22,7 @@ export const multerConfig = {
       }
 
       if (mimetype === 'jpeg' || mimetype === 'png' || mimetype === 'jpg') {
+
         callback(null, 'uploads/images');
       } else if (mimetype === 'mp4' || mimetype === 'mov') {
         callback(null, 'uploads/videos');
@@ -50,11 +52,10 @@ export const multerConfig = {
       const hours = currentDate.getHours().toString().padStart(2, '0');
       const minutes = currentDate.getMinutes().toString().padStart(2, '0');
       const seconds = currentDate.getSeconds().toString().padStart(2, '0');
-
-      const uniqueSuffix = '-' + Math.round(Math.random() * 1e9) + '.' + file.mimetype.split('/')[1];
+      const uniqueSuffix = '.' + file.mimetype.split('/')[1];
+      const fileNameWithoutExtension = file.originalname.replace("."+file.mimetype.split('/')[1], '');
       const formattedDate = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-      const fullFilename = `${formattedDate}${uniqueSuffix}`;
-
+      const fullFilename = `${fileNameWithoutExtension}`;
       callback(null, fullFilename);
     },
   }),

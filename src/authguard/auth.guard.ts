@@ -28,7 +28,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Missing token');
       }
     }
-    console.log('token:', token);
+    //console.log('token:', token);
     if (!token) {
       throw new UnauthorizedException('Missing token');
     }

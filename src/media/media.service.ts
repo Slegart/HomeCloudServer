@@ -1,5 +1,7 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
+import * as fs from 'fs';
+import * as sharp from 'sharp';
 import * as path from 'path';
 import { Response } from 'express';
 import { FileIntegrity } from '@app/FileIntegrity';
@@ -9,11 +11,61 @@ export class MediaService {
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
     await this.fileIntegrity.CheckFileLocations();
+    await this.fileIntegrity.CheckSettingJson();
     if (!file) {
       return 'No file provided';
     }
-    console.log('File:', file);
+    //console.log('File:', file);
+    const settingsFileContent = fs.readFileSync(FileIntegrity.SettingsFile, 'utf-8');
+    const settings = JSON.parse(settingsFileContent);
+    console.log(settings.IsThumbnailEnabled);
+    if (settings.IsThumbnailEnabled)
+     { console.log("CreateThumbnail")
+       this.CreateThumbnail(file) }
     return `Success`;
+  }
+
+  CreateThumbnail(file: Express.Multer.File) {
+    const ThumbnailPath = path.join(FileIntegrity.uploadBasePath, 'Imagethumbnails');
+    if (!fs.existsSync(ThumbnailPath)) {
+      fs.mkdirSync(ThumbnailPath);
+    }
+    const ThumbnailName = file.filename;
+    const ThumbnailFilePath = path.join(ThumbnailPath, ThumbnailName);
+    //console.log("mimetype: ",file.mimetype)
+    if (file.mimetype === 'jpeg') {
+      console.log("jpeg")
+      sharp(file.path)
+        .jpeg({ quality: 30 })
+        .withMetadata()
+        .toFile(ThumbnailFilePath, (err: any) => {
+          if (err) {
+            console.error('Error creating thumbnail:', err);
+          }
+        });
+    }
+    else if (file.mimetype === 'png') {
+      console.log("png")
+      sharp(file.path)
+        .png({ quality: 30 })
+        .withMetadata()
+        .toFile(ThumbnailFilePath, (err: any) => {
+          if (err) {
+            console.error('Error creating thumbnail:', err);
+          }
+        });
+    }
+    else {
+      console.log("other")
+      sharp(file.path)
+        .resize(200, 200)
+        .withMetadata()
+        .toFile(ThumbnailFilePath, (err: any) => {
+          if (err) {
+            console.error('Error creating thumbnail:', err);
+          }
+        });
+    }
   }
 
   FetchFilesLength(): { Images: number; Videos: number; Other: number } {
@@ -22,7 +74,6 @@ export class MediaService {
     const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
     const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
 
-    const fs = require('fs');
     let ImageFilesLength = 0;
     let VideoFilesLength = 0;
     let OtherFilesLength = 0;
@@ -66,31 +117,6 @@ export class MediaService {
     }
   }
 
-  //gallery
-
-  // async serveImage(fileName: string, res: Response)  {
-  //     console.log('serveImage');
-  //     await this.fileIntegrity.CheckFileLocations();
-  //     try {
-  //       console.log('Received fileName:', fileName);
-  //       const imagePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', 'images', fileName);
-
-  //       const fs = require('fs');
-
-  //       if (fs.existsSync(imagePath)) {
-
-  //         const ext = path.extname(imagePath).slice(1);
-  //         const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-  //         res.header('Content-Type', contentType);
-  //         fs.createReadStream(imagePath).pipe(res);
-  //       } else {
-  //         res.status(404).send('Not Found');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error serving image:', error);
-  //       res.status(500).send('Internal Server Error');
-  //     }
-  // }
 
   async GetImagesnames(Pageno: number, PageSize: number): Promise<string[]> {
     console.log('GetImagesnames');
@@ -136,16 +162,20 @@ export class MediaService {
   }
 
 
-  async serveFile(fileName: string, fileType: string, res: Response) {
+  async serveFile(fileName: string, IsThumbnail: boolean, fileType: string, res: Response) {
     //fileType: images, videos, other
-
+    const fs = require('fs');
     console.log(`serve ${fileType}`);
     await this.fileIntegrity.CheckFileLocations();
+    console.log('IsThumbnail:', IsThumbnail);
     try {
       console.log('Received fileName:', fileName);
-      const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
+      let filePath = ""
+      if (IsThumbnail) { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', 'Imagethumbnails', fileName); }
+      else { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName) }
+
       console.log('filePathhhh:', filePath);
-      const fs = require('fs');
+
 
       if (fs.existsSync(filePath)) {
         console.log('File exists');
@@ -160,6 +190,7 @@ export class MediaService {
 
         res.header('Content-Type', contentType);
         fs.createReadStream(filePath).pipe(res);
+
       } else {
         res.status(404).send('Not Found');
       }
@@ -186,19 +217,19 @@ export class MediaService {
 
   async DeleteAllFiles(fileType: string): Promise<string> {
     //fileType: images, videos, other
-    if(fileType === 'images' || fileType === 'videos' || fileType === 'other')
-   { console.log(`DeleteAll ${fileType}`);
-    await this.fileIntegrity.CheckFileLocations();
-    const filePath = path.join(FileIntegrity.uploadBasePath, fileType);
-    const fs = require('fs');
-    if (fs.existsSync(filePath)) {
-      fs.rmdirSync(filePath, { recursive: true });
-      return 'Success';
-    } else {
-      return 'Folder not found';
-    }}
-    else if(fileType==="all")
-    {
+    if (fileType === 'images' || fileType === 'videos' || fileType === 'other') {
+      console.log(`DeleteAll ${fileType}`);
+      await this.fileIntegrity.CheckFileLocations();
+      const filePath = path.join(FileIntegrity.uploadBasePath, fileType);
+      const fs = require('fs');
+      if (fs.existsSync(filePath)) {
+        fs.rmdirSync(filePath, { recursive: true });
+        return 'Success';
+      } else {
+        return 'Folder not found';
+      }
+    }
+    else if (fileType === "all") {
       console.log(`DeleteAll ${fileType}`);
       await this.fileIntegrity.CheckFileLocations();
       const imagesPath = path.join(FileIntegrity.uploadBasePath, 'images');

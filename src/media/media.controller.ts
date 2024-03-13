@@ -36,8 +36,12 @@ export class MediaController {
 
   @Get('serveFile')
   @UseGuards(AuthGuard)
-  async serveFile(@Query('fileName') fileName: string, @Query('fileType')fileType:string , @Res() res: Response) {
-    return this.mediaService.serveFile(fileName,fileType, res);
+  async serveFile(
+    @Query('fileName') fileName: string,
+    @Query('IsThumbnail')IsThumbnail:boolean,
+    @Query('fileType')fileType:string,
+      @Res() res: Response) {
+    return this.mediaService.serveFile(fileName,IsThumbnail,fileType, res);
   }
   //image gallery
 
