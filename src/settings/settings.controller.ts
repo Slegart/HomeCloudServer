@@ -1,16 +1,13 @@
 import { SettingsService } from './settings.service';
-import { Controller, Post, Body, Session, ValidationPipe, UseGuards, Req,HttpCode,Get,HttpStatus,Request, Headers } from '@nestjs/common';
-
-import { AuthGuard } from 'src/authguard/auth.guard';
+import { Controller, Post, Body, ValidationPipe } from '@nestjs/common';
+import { SettingsDto } from './SettingsDto';
 
 @Controller('settings')
 export class SettingsController {
-    constructor(private settingsService:SettingsService) {}
+    constructor(private settingsService: SettingsService) {}
 
-    @Get('SetSettings')
-    //@UseGuards(AuthGuard)
-    async SetSettings(): Promise<string>
-    {
-        return this.settingsService.SetSettings();
+    @Post('SetSettings')
+    async SetSettings(@Body(ValidationPipe) newSettings: SettingsDto): Promise<string> {
+        return this.settingsService.SetSettings(newSettings);
     }
 }
