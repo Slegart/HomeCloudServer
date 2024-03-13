@@ -1,6 +1,7 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import * as fs from 'fs';
+import { readFile } from 'fs/promises';
 import * as sharp from 'sharp';
 import * as path from 'path';
 import { Response } from 'express';
@@ -19,9 +20,10 @@ export class MediaService {
     const settingsFileContent = fs.readFileSync(FileIntegrity.SettingsFile, 'utf-8');
     const settings = JSON.parse(settingsFileContent);
     console.log(settings.IsThumbnailEnabled);
-    if (settings.IsThumbnailEnabled)
-     { console.log("CreateThumbnail")
-       this.CreateThumbnail(file) }
+    if (settings.IsThumbnailEnabled) {
+      console.log("CreateThumbnail")
+      this.CreateThumbnail(file)
+    }
     return `Success`;
   }
 
@@ -119,21 +121,15 @@ export class MediaService {
 
 
   async GetImagesnames(Pageno: number, PageSize: number): Promise<string[]> {
-    console.log('GetImagesnames');
-    console.log('Pageno:', Pageno);
-    console.log('PageSize:', PageSize);
     await this.fileIntegrity.CheckFileLocations();
-    console.log('GetImagesLinks');
     const ImageFilesPath = path.join(FileIntegrity.uploadBasePath, 'images');
     const fs = require('fs');
 
     const TotalImages = fs.readdirSync(ImageFilesPath).length;
     if (Pageno * PageSize > TotalImages) {
-      console.log("last page")
       return fs.readdirSync(ImageFilesPath).slice((Pageno - 1) * PageSize, TotalImages);
     }
     else {
-      console.log("not last page")
       return fs.readdirSync(ImageFilesPath).slice((Pageno - 1) * PageSize, Pageno * PageSize);
     }
   }
@@ -142,58 +138,106 @@ export class MediaService {
 
   async GetFileNames(fileType: string, Pageno: number, PageSize: number): Promise<string[]> {
     //fileType: images, videos, other
-    console.log(`Get${fileType}Names`);
-    console.log('Pageno:', Pageno);
-    console.log('PageSize:', PageSize);
-    await this.fileIntegrity.CheckFileLocations();
-    console.log(`Get${fileType}Links`);
 
+    await this.fileIntegrity.CheckFileLocations();
     const filePath = path.join(FileIntegrity.uploadBasePath, fileType);
     const fs = require('fs');
 
     const totalFiles = fs.readdirSync(filePath).length;
     if (Pageno * PageSize > totalFiles) {
-      console.log("last page");
       return fs.readdirSync(filePath).slice((Pageno - 1) * PageSize, totalFiles);
     } else {
-      console.log("not last page");
       return fs.readdirSync(filePath).slice((Pageno - 1) * PageSize, Pageno * PageSize);
     }
   }
 
 
-  async serveFile(fileName: string, IsThumbnail: boolean, fileType: string, res: Response) {
+  async serveFile(fileName: string, IsThumbnail: string, fileType: string, res: Response) {
     //fileType: images, videos, other
     const fs = require('fs');
-    console.log(`serve ${fileType}`);
     await this.fileIntegrity.CheckFileLocations();
-    console.log('IsThumbnail:', IsThumbnail);
+
     try {
-      console.log('Received fileName:', fileName);
-      let filePath = ""
-      if (IsThumbnail) { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', 'Imagethumbnails', fileName); }
-      else { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName) }
+      if (JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf-8')).IsThumbnailEnabled) {
+        //ekstra depolama acik
+        console.log("thumbnail storage enabled")
+        console.log('thumbnail enabled? true');
+        let filePath = ""
+        if (IsThumbnail === "true") { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', 'Imagethumbnails', fileName); }
+        else { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName) }
 
-      console.log('filePathhhh:', filePath);
+        console.log('filePathh:', filePath);
 
 
-      if (fs.existsSync(filePath)) {
-        console.log('File exists');
-        const ext = path.extname(filePath).slice(1);
-        let contentType = '';
+        if (fs.existsSync(filePath)) {
+          const ext = path.extname(filePath).slice(1);
+          let contentType = '';
 
-        if (fileType === 'images') {
-          contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-        } else if (fileType === 'other') {
-          contentType = `application/${ext}`;
+          if (fileType === 'images') {
+            contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+          } else if (fileType === 'other') {
+            contentType = `application/${ext}`;
+          }
+
+          res.header('Content-Type', contentType);
+
+          fs.createReadStream(filePath).pipe(res);
+
+        } else {
+          res.status(404).send('Not Found');
+        }
+      }
+      else {
+        console.log("thumbnail storage not enabled")
+        //ekstra depolama kapalı
+        if (IsThumbnail === "false") {
+          //tam resimi gonder
+          const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
+          const ext = path.extname(filePath).slice(1);
+          let contentType = '';
+
+          if (fileType === 'images') {
+            contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+          } else if (fileType === 'other') {
+            contentType = `application/${ext}`;
+          }
+
+          res.header('Content-Type', contentType);
+
+          fs.createReadStream(filePath).pipe(res);
+        }
+        else if(IsThumbnail === "true") {
+          //kucuk resmi gonder
+          const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
+          console.log('filePath:', filePath);
+
+          if (fs.existsSync(filePath)) {
+            console.log('file exists');
+
+            const ext = path.extname(filePath).slice(1);
+            let contentType = '';
+
+            if (fileType === 'images') {
+              contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+            } else if (fileType === 'other') {
+              contentType = `application/${ext}`;
+            }
+
+            res.header('Content-Type', contentType);
+
+            const lowQualityImage = await sharp(filePath)
+              .resize(200, 200)
+              .withMetadata()
+              .toBuffer();
+
+            res.end(lowQualityImage);
+          } else {
+            res.status(404).send('Not Found');
+          }
         }
 
-        res.header('Content-Type', contentType);
-        fs.createReadStream(filePath).pipe(res);
-
-      } else {
-        res.status(404).send('Not Found');
       }
+
     } catch (error) {
       console.error(`Error serving ${fileType}:`, error);
       res.status(500).send('Internal Server Error');

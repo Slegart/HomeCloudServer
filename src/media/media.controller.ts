@@ -38,7 +38,7 @@ export class MediaController {
   @UseGuards(AuthGuard)
   async serveFile(
     @Query('fileName') fileName: string,
-    @Query('IsThumbnail')IsThumbnail:boolean,
+    @Query('IsThumbnail')IsThumbnail:string,
     @Query('fileType')fileType:string,
       @Res() res: Response) {
     return this.mediaService.serveFile(fileName,IsThumbnail,fileType, res);
