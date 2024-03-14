@@ -12,4 +12,10 @@ export class SettingsService {
         fs.writeFileSync(FileIntegrity.SettingsFile, JSON.stringify(SettingsDto));
         return 'Success';
     }
+
+    async GetSettings(): Promise<JSON> {
+        await this.fileIntegrity.CheckSettingJson();
+        let settings = JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf8'));
+        return settings;
+    }
 }

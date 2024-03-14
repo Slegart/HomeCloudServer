@@ -34,14 +34,23 @@ export class MediaController {
     return this.mediaService.GetFileNames(fileType,Pageno,PageSize);
   }
 
-  @Get('serveFile')
+  @Get('serveImage')
   @UseGuards(AuthGuard)
-  async serveFile(
+  async ServeImage(
     @Query('fileName') fileName: string,
     @Query('IsThumbnail')IsThumbnail:string,
     @Query('fileType')fileType:string,
       @Res() res: Response) {
-    return this.mediaService.serveFile(fileName,IsThumbnail,fileType, res);
+    return this.mediaService.serveImage(fileName,IsThumbnail,fileType, res);
+  }
+
+  @Get('serveFile') 
+  //@UseGuards(AuthGuard)
+  async ServeFile(
+    @Query('fileName') fileName: string,
+    @Query('fileType')fileType:string,
+      @Res() res: Response) {
+    return this.mediaService.serveFile(fileName,fileType, res);
   }
   //image gallery
 

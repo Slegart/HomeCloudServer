@@ -20,9 +20,16 @@ export class MediaService {
     const settingsFileContent = fs.readFileSync(FileIntegrity.SettingsFile, 'utf-8');
     const settings = JSON.parse(settingsFileContent);
     console.log(settings.IsThumbnailEnabled);
-    if (settings.IsThumbnailEnabled) {
-      console.log("CreateThumbnail")
-      this.CreateThumbnail(file)
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
+      if(file.size<1024*1024)
+      {
+        //file small enough, no need to compress
+        return `Success`;
+      }
+      if (settings.IsThumbnailEnabled) {
+        console.log("CreateThumbnail")
+        this.CreateThumbnail(file)
+      }
     }
     return `Success`;
   }
@@ -34,40 +41,17 @@ export class MediaService {
     }
     const ThumbnailName = file.filename;
     const ThumbnailFilePath = path.join(ThumbnailPath, ThumbnailName);
-    //console.log("mimetype: ",file.mimetype)
-    if (file.mimetype === 'jpeg') {
-      console.log("jpeg")
-      sharp(file.path)
-        .jpeg({ quality: 30 })
-        .withMetadata()
-        .toFile(ThumbnailFilePath, (err: any) => {
-          if (err) {
-            console.error('Error creating thumbnail:', err);
-          }
-        });
-    }
-    else if (file.mimetype === 'png') {
-      console.log("png")
-      sharp(file.path)
-        .png({ quality: 30 })
-        .withMetadata()
-        .toFile(ThumbnailFilePath, (err: any) => {
-          if (err) {
-            console.error('Error creating thumbnail:', err);
-          }
-        });
-    }
-    else {
-      console.log("other")
-      sharp(file.path)
-        .resize(200, 200)
-        .withMetadata()
-        .toFile(ThumbnailFilePath, (err: any) => {
-          if (err) {
-            console.error('Error creating thumbnail:', err);
-          }
-        });
-    }
+    console.log("mimetype:eeeeeeeeeeeeeeeee ", file.mimetype)
+    const data = sharp(file.path)
+      .resize({ width: 500, withoutEnlargement: true })
+      .jpeg({ quality: 80, progressive: true, force: false })
+      .webp({ quality: 80, lossless: true, force: false })
+      .png({ quality: 80, compressionLevel: 8, force: false })
+      .withMetadata()
+      .toFile(ThumbnailFilePath)
+      .then((info) => {
+        console.log("info: ", info)
+      })
   }
 
   FetchFilesLength(): { Images: number; Videos: number; Other: number } {
@@ -152,7 +136,7 @@ export class MediaService {
   }
 
 
-  async serveFile(fileName: string, IsThumbnail: string, fileType: string, res: Response) {
+  async serveImage(fileName: string, IsThumbnail: string, fileType: string, res: Response) {
     //fileType: images, videos, other
     const fs = require('fs');
     await this.fileIntegrity.CheckFileLocations();
@@ -184,7 +168,25 @@ export class MediaService {
           fs.createReadStream(filePath).pipe(res);
 
         } else {
-          res.status(404).send('Not Found');
+          filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName)
+          if (fs.existsSync(filePath
+          )) {
+            console.log("thumbnail not found")
+            const ext = path.extname(filePath).slice(1);
+            let contentType = '';
+
+            if (fileType === 'images') {
+              contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+            } else if (fileType === 'other') {
+              contentType = `application/${ext}`;
+            }
+
+            res.header('Content-Type', contentType);
+
+            fs.createReadStream(filePath).pipe(res);
+          } else {
+            res.status(404).send('Not Found');
+          }
         }
       }
       else {
@@ -206,7 +208,7 @@ export class MediaService {
 
           fs.createReadStream(filePath).pipe(res);
         }
-        else if(IsThumbnail === "true") {
+        else if (IsThumbnail === "true") {
           //kucuk resmi gonder
           const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
           console.log('filePath:', filePath);
@@ -242,6 +244,29 @@ export class MediaService {
       console.error(`Error serving ${fileType}:`, error);
       res.status(500).send('Internal Server Error');
     }
+  }
+
+  async serveFile(fileName: string, fileType: string, res: Response) {
+    //only filetype other & videos
+    console.log('Received fileName:', fileName);
+
+    await this.fileIntegrity.CheckFileLocations();
+    const filePath = path.join(FileIntegrity.uploadBasePath, fileType, fileName);
+    console.log('filePath:', filePath);
+    const fs = require('fs');
+    if (fs.existsSync(filePath)) {
+      const ext = path.extname(filePath).slice(1);
+      let contentType = '';
+ 
+      contentType = `application/${ext}`;
+
+      res.header('Content-Type', contentType);
+      
+      fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.status(404).send('Not Found');
+    }
+
   }
 
   async DeleteFile(fileName: string, fileType: string): Promise<string> {

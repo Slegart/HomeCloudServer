@@ -45,6 +45,7 @@ export const multerConfig = {
       }
     },
     filename: (req, file, callback) => {
+      console.log("recieved file is =>", file)
       const currentDate = new Date();
       const day = currentDate.getDate().toString().padStart(2, '0');
       const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
@@ -55,7 +56,7 @@ export const multerConfig = {
       const uniqueSuffix = '.' + file.mimetype.split('/')[1];
       const fileNameWithoutExtension = file.originalname.replace("."+file.mimetype.split('/')[1], '');
       const formattedDate = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-      const fullFilename = `${fileNameWithoutExtension}`;
+      let fullFilename = file.originalname
       callback(null, fullFilename);
     },
   }),
