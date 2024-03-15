@@ -6,6 +6,8 @@ import * as sharp from 'sharp';
 import * as path from 'path';
 import { Response } from 'express';
 import { FileIntegrity } from '@app/FileIntegrity';
+import { Readable } from 'stream';
+
 @Injectable()
 export class MediaService {
   private readonly fileIntegrity = new FileIntegrity();
@@ -21,8 +23,7 @@ export class MediaService {
     const settings = JSON.parse(settingsFileContent);
     console.log(settings.IsThumbnailEnabled);
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
-      if(file.size<1024*1024)
-      {
+      if (file.size < 1024 * 1024) {
         //file small enough, no need to compress
         return `Success`;
       }
@@ -31,7 +32,43 @@ export class MediaService {
         this.CreateThumbnail(file)
       }
     }
+
+    if (file.mimetype === 'video/mp4' ||
+      file.mimetype === 'video/avi' ||
+      file.mimetype === 'video/mov' ||
+      file.mimetype === 'video/wmv' ||
+      file.mimetype === 'video/flv' ||
+      file.mimetype === 'video/mkv' ||
+      file.mimetype === 'video/webm') {
+      console.log("video")
+    }
     return `Success`;
+  }
+
+  async CreateVideoThumbnail(FileType: string, FileName: string): Promise<string> {
+    const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+    const ffmpeg = require('fluent-ffmpeg');
+    ffmpeg.setFfmpegPath(ffmpegPath);
+
+    await this.fileIntegrity.CheckFileLocations();
+    const VideosFilePath = path.join(FileIntegrity.uploadBasePath, FileType);
+
+    const filepath = path.join(VideosFilePath, FileName);
+    const promise = new Promise<string>((resolve, reject) => {
+      ffmpeg(filepath)
+        .seekInput(1)
+        .frames(1)
+        .format('image2pipe')
+        .pipe()
+        .on('data', (chunk: any) => {
+          resolve(chunk.toString('base64'));
+        })
+        .on('error', (err: Error) => {
+          reject(err);
+        });
+    });
+
+    return promise;
   }
 
   CreateThumbnail(file: Express.Multer.File) {
@@ -103,7 +140,6 @@ export class MediaService {
     }
   }
 
-
   async GetImagesnames(Pageno: number, PageSize: number): Promise<string[]> {
     await this.fileIntegrity.CheckFileLocations();
     const ImageFilesPath = path.join(FileIntegrity.uploadBasePath, 'images');
@@ -117,8 +153,6 @@ export class MediaService {
       return fs.readdirSync(ImageFilesPath).slice((Pageno - 1) * PageSize, Pageno * PageSize);
     }
   }
-
-  //documents
 
   async GetFileNames(fileType: string, Pageno: number, PageSize: number): Promise<string[]> {
     //fileType: images, videos, other
@@ -134,7 +168,6 @@ export class MediaService {
       return fs.readdirSync(filePath).slice((Pageno - 1) * PageSize, Pageno * PageSize);
     }
   }
-
 
   async serveImage(fileName: string, IsThumbnail: string, fileType: string, res: Response) {
     //fileType: images, videos, other
@@ -257,11 +290,11 @@ export class MediaService {
     if (fs.existsSync(filePath)) {
       const ext = path.extname(filePath).slice(1);
       let contentType = '';
- 
+
       contentType = `application/${ext}`;
 
       res.header('Content-Type', contentType);
-      
+
       fs.createReadStream(filePath).pipe(res);
     } else {
       res.status(404).send('Not Found');

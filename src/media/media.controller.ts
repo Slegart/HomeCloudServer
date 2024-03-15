@@ -5,6 +5,7 @@ import { MediaService } from './media.service';
 import { AuthGuard } from '../authguard/auth.guard';
 import * as path from 'path';
 import { Response } from 'express';
+import { Readable } from 'stream';
 
 @Controller('media')
 export class MediaController {
@@ -80,5 +81,10 @@ export class MediaController {
     return this.mediaService.GetAllFilesStats();
   }
   //GetAllFilesStats
+
+  @Get('videothumbnails')
+  async test(@Query('fileType') fileType:string, @Query('fileName') fileName:string): Promise<string>{
+    return this.mediaService.CreateVideoThumbnail(fileType,fileName);
+  }
 
 }
