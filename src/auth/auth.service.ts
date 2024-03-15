@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthDTO } from './auth.model';
 import { JwtService } from '@nestjs/jwt';
 import { FileIntegrity } from '@app/FileIntegrity';
+import * as fs from 'fs';
 @Injectable()
 export class AuthService {
   constructor(private jwtService: JwtService) { }
@@ -21,7 +22,7 @@ export class AuthService {
       const payload = { username };
       const access_token = this.jwtService.sign(payload, {
         secret: process.env.JWT_SECRET,
-        expiresIn: '1200s',
+        expiresIn: JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf-8')).sessionDuration,
       });
 
       return {
