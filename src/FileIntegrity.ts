@@ -38,6 +38,8 @@ export class FileIntegrity {
             const ImageFiles = path.join(FileIntegrity.uploadBasePath, 'images');
             const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
             const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
+            const ImageThumbnailFiles = path.join(FileIntegrity.uploadBasePath, 'Imagethumbnails');
+            //const VideoThumbnailFiles = path.join(FileIntegrity.uploadBasePath, 'Videothumbnails');
 
             if (!fs.existsSync(ImageFiles)) {
                 fs.mkdirSync(ImageFiles);
@@ -48,6 +50,12 @@ export class FileIntegrity {
             if (!fs.existsSync(OtherFiles)) {
                 fs.mkdirSync(OtherFiles);
             }
+            if (!fs.existsSync(ImageThumbnailFiles)) {
+                fs.mkdirSync(ImageThumbnailFiles);
+            }
+            // if (!fs.existsSync(VideoThumbnailFiles)) {
+            //     fs.mkdirSync(VideoThumbnailFiles);
+            // }
             return true;
         }
         catch (error) {
