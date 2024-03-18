@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FileIntegrity } from '@app/FileIntegrity';
-import { Console } from 'console';
+import { SettingsDto } from './SettingsDto';
 import * as fs from 'fs';
 @Injectable()
 export class SettingsService {
@@ -14,6 +14,11 @@ export class SettingsService {
     }
 
     async GetSettings(): Promise<JSON> {
+        await this.fileIntegrity.CheckSettingJson();
+        let settings = JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf8'));
+        return settings;
+    }
+    async GetSettingsDTO(): Promise<SettingsDto> {
         await this.fileIntegrity.CheckSettingJson();
         let settings = JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf8'));
         return settings;
