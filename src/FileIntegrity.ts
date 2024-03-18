@@ -6,6 +6,7 @@ import { cwd } from 'process';
 export class FileIntegrity {
     public static uploadBasePath: string;
     public static SettingsFile: string;
+    public static CertificatePath: string;
 
     constructor() {
         FileIntegrity.uploadBasePath = process.env.NODE_ENV === 'production'
@@ -13,6 +14,10 @@ export class FileIntegrity {
             : path.join(process.cwd(), '/uploads');
 
         FileIntegrity.SettingsFile = path.join(process.cwd(), '/src/settings/settings.json');
+
+        FileIntegrity.CertificatePath = process.env.NODE_ENV === 'production'
+            ? path.join(process.cwd(), '/dist/certificates')
+            : path.join(process.cwd(), '/certificates');
     }
 
     public async CheckSettingJson(): Promise<boolean> {
@@ -38,9 +43,12 @@ export class FileIntegrity {
             const ImageFiles = path.join(FileIntegrity.uploadBasePath, 'images');
             const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
             const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
+            const CertificatePath = path.join(FileIntegrity.CertificatePath);
             const ImageThumbnailFiles = path.join(FileIntegrity.uploadBasePath, 'Imagethumbnails');
-            //const VideoThumbnailFiles = path.join(FileIntegrity.uploadBasePath, 'Videothumbnails');
-
+            
+            if (!fs.existsSync(CertificatePath)) {
+                fs.mkdirSync(CertificatePath);
+            }
             if (!fs.existsSync(ImageFiles)) {
                 fs.mkdirSync(ImageFiles);
             }
@@ -53,9 +61,7 @@ export class FileIntegrity {
             if (!fs.existsSync(ImageThumbnailFiles)) {
                 fs.mkdirSync(ImageThumbnailFiles);
             }
-            // if (!fs.existsSync(VideoThumbnailFiles)) {
-            //     fs.mkdirSync(VideoThumbnailFiles);
-            // }
+
             return true;
         }
         catch (error) {
