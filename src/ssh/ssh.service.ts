@@ -108,5 +108,14 @@ export class SshService {
             console.error('Error restarting server:', error);
         }
     }
+
+    async ShutdownServer() {
+        try {
+            console.log('Shutting down server');
+            this.eventEmitter.emit('Shutdown');
+        } catch (error) {
+            console.error('Error shutting down server:', error);
+        }
+    }
     
 }
