@@ -13,14 +13,19 @@ export class AuthController {
     return this.authService.login(AuthDTO);
   }
 
+  @Post('register')
+  signUp(@Body() AuthDTO: AuthDTO, @Session() session: any ){
+    return this.authService.register(AuthDTO);
+  }
+
   @UseGuards(AuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
     return req.user;
   }
   @Get('Connection')
-  CheckConnection(){
-    return 'Connected';
+  CheckConnection():Promise<string>{
+    return this.authService.CheckConnection();
   }
 
   @Post('verify')
