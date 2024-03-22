@@ -1,32 +1,28 @@
 import { diskStorage } from 'multer';
-var fs = require('fs');
+import { FileIntegrity } from '@app/FileIntegrity';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export const multerConfig = {
-
   storage: diskStorage({
     destination: (req, file, callback) => {
+      const uploadPath = FileIntegrity.uploadBasePath;
       const mimetype = file.mimetype.split('/')[1];
-      console.log('mimetype:', mimetype);
 
-      if (!fs.existsSync('uploads')) {
-        fs.mkdirSync('uploads', { recursive: true });
-      }
-      if (!fs.existsSync('uploads/images')) {
-        fs.mkdirSync('uploads/images', { recursive: true });
-      }
-      if (!fs.existsSync('uploads/videos')) {
-        fs.mkdirSync('uploads/videos', { recursive: true });
-      }
-      if (!fs.existsSync('uploads/other')) {
-        fs.mkdirSync('uploads/other', { recursive: true });
-      }
+      const imageDestination = `${uploadPath}/images`;
+      const videoDestination = `${uploadPath}/videos`;
+      const otherDestination = `${uploadPath}/other`;
 
+      ensureDirectoryExists(imageDestination);
+      ensureDirectoryExists(videoDestination);
+      ensureDirectoryExists(otherDestination);
+
+      let destination;
       if (mimetype === 'jpeg' || mimetype === 'png' || mimetype === 'jpg') {
-
-        callback(null, 'uploads/images');
+        destination = imageDestination;
       } else if (mimetype === 'mp4' || mimetype === 'mov') {
-        callback(null, 'uploads/videos');
-      } else if (
+        destination = videoDestination;
+      }  else if (
         mimetype === 'pdf' ||
         mimetype === 'docx' ||
         mimetype === 'txt' ||
@@ -41,23 +37,23 @@ export const multerConfig = {
         mimetype === 'bz2' ||
         mimetype === 'xz' ||
         mimetype === 'xml') {
-        callback(null, 'uploads/other');
+        destination = otherDestination;
       }
+
+      callback(null, destination);
     },
     filename: (req, file, callback) => {
-      console.log("recieved file is =>", file)
       const currentDate = new Date();
-      const day = currentDate.getDate().toString().padStart(2, '0');
-      const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = currentDate.getFullYear();
-      const hours = currentDate.getHours().toString().padStart(2, '0');
-      const minutes = currentDate.getMinutes().toString().padStart(2, '0');
-      const seconds = currentDate.getSeconds().toString().padStart(2, '0');
-      const uniqueSuffix = '.' + file.mimetype.split('/')[1];
-      const fileNameWithoutExtension = file.originalname.replace("."+file.mimetype.split('/')[1], '');
-      const formattedDate = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-      let fullFilename = file.originalname
-      callback(null, fullFilename);
+      const uniqueFilename = `${currentDate.getTime()}_${file.originalname}`;
+
+      callback(null, uniqueFilename);
     },
   }),
-}; 
+};
+
+function ensureDirectoryExists(directory: string) {
+  directory = path.join(directory);
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+}

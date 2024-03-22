@@ -1,13 +1,10 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
-import { createReadStream } from 'fs';
 import * as fs from 'fs';
-import { readFile } from 'fs/promises';
 import * as sharp from 'sharp';
 import * as path from 'path';
 import { Response } from 'express';
 import { FileIntegrity } from '@app/FileIntegrity';
-import { Readable } from 'stream';
-
+import * as os from 'os';
 @Injectable()
 export class MediaService {
   private readonly fileIntegrity = new FileIntegrity();
@@ -92,7 +89,7 @@ export class MediaService {
   }
 
   FetchFilesLength(): { Images: number; Videos: number; Other: number } {
-
+    console.log('FilesLength');
     const ImageFiles = path.join(FileIntegrity.uploadBasePath, 'images');
     const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
     const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
@@ -379,6 +376,66 @@ export class MediaService {
 
     return JSON.stringify(result);
   }
+
+  async  GetStorageSpace():Promise<string> {
+    console.log('GetStorageSpace');
+    let freeSpace = 0;
+    let totalSpace = 0;
+    let usedSpace = 0;
+    if(freeSpace !== 0 && totalSpace !== 0 && usedSpace !== 0)
+    {
+      console.log("calculated before")
+      return JSON.stringify({totalSpace,usedSpace,freeSpace})
+    }
+    try {
+      //test
+      if(os.platform() === 'win32' || 'win64') {
+        const exec = require('util').promisify(require('child_process').exec);
+        const { stdout, stderr } = await exec('wmic logicaldisk get Size, FreeSpace');
+        if (typeof stdout === 'string') {
+
+          stdout.split('\n').forEach((line: string) => {
+            let parts = line.split(' ').filter((part: string) => part !== '');
+            let freespace = parseInt(parts[0]);
+            console.log('freespace:', freespace);
+            {freespace = isNaN(freespace) ? 0 : freespace}
+            freeSpace += freespace
+            let size = parseInt(parts[1]);
+            console.log('size:', size);
+            {size = isNaN(size) ? 0 : size}
+            totalSpace += size
+          }); 
+           usedSpace = totalSpace - freeSpace
+          return JSON.stringify({totalSpace,usedSpace,freeSpace})
+        } else {
+            throw new Error('stdout is not a string');
+        }
+      }
+      else
+      {
+        const exec = require('util').promisify(require('child_process').exec);
+        const { stdout, stderr } = await exec('df /');
+        if (typeof stdout === 'string') {
+          stdout.split('\n').forEach((line: string) => {
+            if (line.includes('/')) {
+              const parts = line.split(' ').filter((part: string) => part !== '');
+              console.log('parts:', parts);
+               totalSpace = parseInt(parts[1]) ;
+               usedSpace = parseInt(parts[2]) ;
+               freeSpace = parseInt(parts[3]) ;
+         
+              return JSON.stringify({totalSpace,usedSpace,freeSpace})
+            }
+          });
+        } else {
+            throw new Error('stdout is not a string');
+        }
+      }
+    } catch (error) {
+        console.error(`Error getting storage space: ${error}`);
+        return 'Error';
+    }
+}
 
   getFolderSize(Other: string): number {
     const fs = require('fs');

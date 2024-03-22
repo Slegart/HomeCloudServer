@@ -22,8 +22,9 @@ export class MediaController {
 
   //files length
   @Get('FilesLength')
-  @UseGuards(AuthGuard)
+  //@UseGuards(AuthGuard)
   ReturnFilesLength(): { Images: number; Videos: number; Other: number }{
+    console.log('FilesLength');
     return this.mediaService.FetchFilesLength();
   }
   //files length
@@ -85,6 +86,11 @@ export class MediaController {
   @Get('videothumbnails')
   async test(@Query('fileType') fileType:string, @Query('fileName') fileName:string): Promise<string>{
     return this.mediaService.CreateVideoThumbnail(fileType,fileName);
+  }
+
+  @Get('getstoragespace')
+  async GetStorageSpace(): Promise<string>{
+    return this.mediaService.GetStorageSpace();
   }
 
 }
