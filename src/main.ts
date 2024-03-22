@@ -13,10 +13,11 @@ async function bootstrap() {
   const fileIntegrity = new FileIntegrity();
   await fileIntegrity.CheckFileLocations();
   await fileIntegrity.CheckSettingJson();
+  await fileIntegrity.CheckAuthJson();
 
   const settingservice = new SettingsService();
   const sshservice = new SshService(settingservice, null)
-  let Port = 5000;
+  let Port = 5000; 
   let settings = JSON.parse(fs.readFileSync(FileIntegrity.SettingsFile, 'utf8'));
   let UseHTTPS = false;
   if (settings) {
@@ -36,12 +37,13 @@ async function bootstrap() {
     else
     {
       UseHTTPS = settings.HTTPSEnabled;
-      console.log('Settings:', settings);
       Port = parseInt(settings.Port);
+      if(Number.isNaN(Port))
+      {
+        Port = 5000;
+      }
     }
   }
-  console.log(FileIntegrity.CertificatePath + '/key.pem')
-  console.log(FileIntegrity.CertificatePath + '/cert.pem')
   let app = await NestFactory.create(AppModule, {
     ...(UseHTTPS && {
       httpsOptions: {
@@ -57,11 +59,17 @@ async function bootstrap() {
 
   eventEmitter.on('Restart', async (Port) => {
     console.log('changing port');
-    await server.close(); 
+    await server.close();
     app = await NestFactory.create(AppModule, {});
     await app.listen(Port); 
     console.log('Server port updated to:', Port);
     return Port;
+  });
+
+  eventEmitter.on('Shutdown', async () => {
+    console.log('Shutting down server');
+    await server.close();
+    process.exit(0);
   });
 
 }

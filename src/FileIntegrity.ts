@@ -6,24 +6,45 @@ import { cwd } from 'process';
 export class FileIntegrity {
     public static uploadBasePath: string;
     public static SettingsFile: string;
-    public static CertificatePath: string;
+    public static CertificatePath: string; 
+    public static AuthPath: string;
 
     constructor() {
-        FileIntegrity.uploadBasePath = process.env.NODE_ENV === 'production'
-            ? path.join(process.cwd(), '/dist/uploads')
-            : path.join(process.cwd(), '/uploads');
+        FileIntegrity.uploadBasePath = process.platform === 'win32'||'win64' ? 'C:/Uploads' : '/Uploads';
 
         FileIntegrity.SettingsFile = path.join(process.cwd(), '/src/settings/settings.json');
+        FileIntegrity.AuthPath = path.join(process.cwd(), '/src/auth/auth.json');
 
         FileIntegrity.CertificatePath = process.env.NODE_ENV === 'production'
             ? path.join(process.cwd(), '/dist/certificates')
             : path.join(process.cwd(), '/certificates');
     }
 
+    public async CheckAuthJson(): Promise<boolean> {
+        try {
+            if (!fs.existsSync(FileIntegrity.AuthPath)) {
+                fs.writeFileSync(FileIntegrity.AuthPath, JSON.stringify({  
+                    username: 'admin',
+                    password: 'admin' }));
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Error checking auth file:', error);
+            return false;
+        }
+    }
+
     public async CheckSettingJson(): Promise<boolean> {
         try {
             if (!fs.existsSync(FileIntegrity.SettingsFile)) {
-                fs.writeFileSync(FileIntegrity.SettingsFile, JSON.stringify({ IsThumbnailEnabled: true }));
+                fs.writeFileSync(FileIntegrity.SettingsFile, JSON.stringify({  
+                    IsThumbnailEnabled: false,
+                    isFullSizeImagesEnabled: false,
+                    sessionDuration: 10000,
+                    HTTPSEnabled: false,
+                    InitialConnectionFinished: false,
+                    port: 5000 }));
             }
             return true;
         }
@@ -36,7 +57,6 @@ export class FileIntegrity {
     public async CheckFileLocations(): Promise<boolean> {
         try {
             const UploadsFile = path.join(FileIntegrity.uploadBasePath);
-            console.log('UploadsFile:', UploadsFile);
             if (!fs.existsSync(UploadsFile)) {
                 fs.mkdirSync(UploadsFile);
             }
