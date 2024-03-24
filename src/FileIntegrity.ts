@@ -1,7 +1,5 @@
-
 import * as path from 'path';
 import * as fs from 'fs';
-import { cwd } from 'process';
 
 export class FileIntegrity {
     public static uploadBasePath: string;
@@ -10,14 +8,14 @@ export class FileIntegrity {
     public static AuthPath: string;
 
     constructor() {
-        FileIntegrity.uploadBasePath = process.platform === 'win32'||'win64' ? 'C:/Uploads' : '/Uploads';
-
-        FileIntegrity.SettingsFile = path.join(process.cwd(), '/src/settings/settings.json');
-        FileIntegrity.AuthPath = path.join(process.cwd(), '/src/auth/auth.json');
+        FileIntegrity.uploadBasePath = '/Uploads';
+        
+        FileIntegrity.SettingsFile = path.join(FileIntegrity.uploadBasePath, 'settings/settings.json');
+        FileIntegrity.AuthPath = path.join(FileIntegrity.uploadBasePath, 'auth/auth.json');
 
         FileIntegrity.CertificatePath = process.env.NODE_ENV === 'production'
-            ? path.join(process.cwd(), '/dist/certificates')
-            : path.join(process.cwd(), '/certificates');
+            ? path.join(FileIntegrity.uploadBasePath, 'dist/certificates')
+            : path.join(FileIntegrity.uploadBasePath, 'certificates');
     }
 
     public async CheckAuthJson(): Promise<boolean> {
@@ -56,16 +54,33 @@ export class FileIntegrity {
 
     public async CheckFileLocations(): Promise<boolean> {
         try {
-            const UploadsFile = path.join(FileIntegrity.uploadBasePath);
-            if (!fs.existsSync(UploadsFile)) {
-                fs.mkdirSync(UploadsFile);
+            const UploadsFile = FileIntegrity.uploadBasePath;
+            try {
+                if (!fs.existsSync(UploadsFile)) {
+                    fs.mkdirSync(UploadsFile);
+                    console.log(`Directory created successfully: ${UploadsFile}`);
+                } else {
+                    console.log(`Directory already exists: ${UploadsFile}`);
+                }
+            } catch (error) {
+                console.error('Error creating directory:', error);
             }
+
+            // Adjust other paths accordingly
             const ImageFiles = path.join(FileIntegrity.uploadBasePath, 'images');
             const VideoFiles = path.join(FileIntegrity.uploadBasePath, 'videos');
             const OtherFiles = path.join(FileIntegrity.uploadBasePath, 'other');
-            const CertificatePath = path.join(FileIntegrity.CertificatePath);
+            const CertificatePath = FileIntegrity.CertificatePath;
             const ImageThumbnailFiles = path.join(FileIntegrity.uploadBasePath, 'Imagethumbnails');
-            
+            const SettingsFile = path.join(FileIntegrity.uploadBasePath, 'settings');
+            const AuthFile = path.join(FileIntegrity.uploadBasePath, 'auth');
+
+            if (!fs.existsSync(SettingsFile)) {
+                fs.mkdirSync(SettingsFile);
+            }
+            if (!fs.existsSync(AuthFile)) {
+                fs.mkdirSync(AuthFile);
+            }
             if (!fs.existsSync(CertificatePath)) {
                 fs.mkdirSync(CertificatePath);
             }
@@ -88,6 +103,5 @@ export class FileIntegrity {
             console.error('Error checking file locations:', error);
             return false;
         }
-
     }
 }

@@ -177,8 +177,8 @@ export class MediaService {
         console.log("thumbnail storage enabled")
         console.log('thumbnail enabled? true');
         let filePath = ""
-        if (IsThumbnail === "true") { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', 'Imagethumbnails', fileName); }
-        else { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName) }
+        if (IsThumbnail === "true") { filePath = path.join(FileIntegrity.uploadBasePath, 'Imagethumbnails', fileName); }
+        else { filePath = path.join(FileIntegrity.uploadBasePath, '..', 'Uploads', fileType, fileName) }
 
         console.log('filePathh:', filePath);
 
@@ -198,7 +198,7 @@ export class MediaService {
           fs.createReadStream(filePath).pipe(res);
 
         } else {
-          filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName)
+          filePath = path.join(FileIntegrity.uploadBasePath, fileType, fileName)
           if (fs.existsSync(filePath
           )) {
             console.log("thumbnail not found")
@@ -224,7 +224,7 @@ export class MediaService {
         //ekstra depolama kapalı
         if (IsThumbnail === "false") {
           //tam resimi gonder
-          const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
+          const filePath = path.join(FileIntegrity.uploadBasePath, fileType, fileName);
           const ext = path.extname(filePath).slice(1);
           let contentType = '';
 
@@ -240,7 +240,7 @@ export class MediaService {
         }
         else if (IsThumbnail === "true") {
           //kucuk resmi gonder
-          const filePath = path.join(FileIntegrity.uploadBasePath, '..', 'uploads', fileType, fileName);
+          const filePath = path.join(FileIntegrity.uploadBasePath, fileType, fileName);
           console.log('filePath:', filePath);
 
           if (fs.existsSync(filePath)) {
@@ -377,65 +377,42 @@ export class MediaService {
     return JSON.stringify(result);
   }
 
-  async  GetStorageSpace():Promise<string> {
+  async GetStorageSpace(): Promise<string> {
     console.log('GetStorageSpace');
     let freeSpace = 0;
     let totalSpace = 0;
     let usedSpace = 0;
-    if(freeSpace !== 0 && totalSpace !== 0 && usedSpace !== 0)
-    {
+    if (freeSpace !== 0 && totalSpace !== 0 && usedSpace !== 0) {
       console.log("calculated before")
-      return JSON.stringify({totalSpace,usedSpace,freeSpace})
+      return JSON.stringify({ totalSpace, usedSpace, freeSpace })
     }
     try {
-      //test
-      if(os.platform() === 'win32' || 'win64') {
-        const exec = require('util').promisify(require('child_process').exec);
-        const { stdout, stderr } = await exec('wmic logicaldisk get Size, FreeSpace');
-        if (typeof stdout === 'string') {
+      const exec = require('util').promisify(require('child_process').exec);
+      const { stdout, stderr } = await exec('df /');
+      if (typeof stdout === 'string') {
+        stdout.split('\n').forEach((line: string) => {
+          if (line.includes('/')) {
+            const parts = line.split(' ').filter((part: string) => part !== '');
+            console.log('parts:', parts);
+            totalSpace = parseInt(parts[1]);
+            usedSpace = parseInt(parts[2]);
+            freeSpace = parseInt(parts[3]);
 
-          stdout.split('\n').forEach((line: string) => {
-            let parts = line.split(' ').filter((part: string) => part !== '');
-            let freespace = parseInt(parts[0]);
-            console.log('freespace:', freespace);
-            {freespace = isNaN(freespace) ? 0 : freespace}
-            freeSpace += freespace
-            let size = parseInt(parts[1]);
-            console.log('size:', size);
-            {size = isNaN(size) ? 0 : size}
-            totalSpace += size
-          }); 
-           usedSpace = totalSpace - freeSpace
-          return JSON.stringify({totalSpace,usedSpace,freeSpace})
-        } else {
-            throw new Error('stdout is not a string');
-        }
-      }
-      else
-      {
-        const exec = require('util').promisify(require('child_process').exec);
-        const { stdout, stderr } = await exec('df /');
-        if (typeof stdout === 'string') {
-          stdout.split('\n').forEach((line: string) => {
-            if (line.includes('/')) {
-              const parts = line.split(' ').filter((part: string) => part !== '');
-              console.log('parts:', parts);
-               totalSpace = parseInt(parts[1]) ;
-               usedSpace = parseInt(parts[2]) ;
-               freeSpace = parseInt(parts[3]) ;
-         
-              return JSON.stringify({totalSpace,usedSpace,freeSpace})
-            }
-          });
-        } else {
-            throw new Error('stdout is not a string');
-        }
-      }
+          }
+        });
+      } 
+      const result = {
+        TotalSpace:totalSpace,
+        UsedSpace:usedSpace,
+        FreeSpace:freeSpace
+      };
+      console.log(result);
+      return JSON.stringify(result)
     } catch (error) {
-        console.error(`Error getting storage space: ${error}`);
-        return 'Error';
+      console.error(`Error getting storage space: ${error}`);
+      return 'Error';
     }
-}
+  }
 
   getFolderSize(Other: string): number {
     const fs = require('fs');
