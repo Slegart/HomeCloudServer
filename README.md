@@ -28,9 +28,19 @@
 
 ## Installation
 
+-Create directory in root named Uploads it will be used for storage
+```bash
+$ sudo mkdir ~/Uploads
+```
+- Directly running node application (node version 20.11.0)
 ```bash
 $ npm install
+$ npm run start
 ```
+-Running through docker container
+
+-docker pull slegart/homecloudserver
+-docker run -v /home/user/Uploads:/Uploads -p 5000:5000 slegart/homecloudserver
 
 ## Running the app
 
