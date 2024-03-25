@@ -24,7 +24,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Server side application for home cloud mobile https://github.com/Slegart/HomeCloudMobile
 
 ## Installation
 
@@ -35,26 +35,22 @@ $ sudo mkdir ~/Uploads
 - Directly running node application (node version 20.11.0)
 ```bash
 $ npm install
-$ npm run start
 ```
 -Running through docker container
 
--docker pull slegart/homecloudserver
--docker run -v /home/user/Uploads:/Uploads -p 5000:5000 slegart/homecloudserver
-
-## Running the app
-
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+$ docker pull slegart/homecloudserver
 ```
 
+## Running the app
+node start
+```bash
+$ npm run start
+```
+docker start
+```bash
+$ docker run -v /home/user/Uploads:/Uploads -p 5000:5000 slegart/homecloudserver
+```
 ## Test
 
 ```bash
